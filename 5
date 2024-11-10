@@ -1,0 +1,95 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load the dataset
+data = pd.read_csv("AirQuality.csv")
+
+# Explore the dataset
+print(data.info())
+print(data.isnull().sum())
+
+# Remove rows with missing values
+data.dropna(inplace=True)
+
+# Convert 'Date' column to datetime format
+data['Date'] = pd.to_datetime(data['Date'])
+
+# Sort data by 'Date' for time series analysis
+data.sort_values(by='Date', inplace=True)
+
+# Plot AQI Trend over time
+plt.figure(figsize=(12, 6))
+plt.plot(data['Date'], data['AQI'], label='AQI', color='blue', linewidth=2)
+plt.xlabel('Date')
+plt.ylabel('AQI')
+plt.title('AQI Trend Over Time')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# Plot pollutant trends over time (PM2.5, PM10, CO)
+pollutants = ['PM2.5', 'PM10', 'CO']
+plt.figure(figsize=(12, 8))
+
+for pollutant in pollutants:
+    plt.plot(data['Date'], data[pollutant], label=pollutant)
+
+plt.xlabel('Date')
+plt.ylabel('Concentration')
+plt.title('Pollutant Trends Over Time')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# Group data by 'Date' and calculate average AQI
+aqi_by_date = data.groupby('Date')['AQI'].mean().reset_index()
+
+# Plot bar chart for average AQI across dates
+plt.figure(figsize=(12, 6))
+plt.bar(aqi_by_date['Date'], aqi_by_date['AQI'], color='blue', alpha=0.7)
+plt.xlabel('Date')
+plt.ylabel('Average AQI')
+plt.title('Average AQI Across Dates')
+plt.xticks(rotation=45)
+plt.grid(axis='y')
+plt.tight_layout()
+plt.show()
+
+# Create violin plots for distribution of AQI by pollutant (PM2.5, PM10, CO)
+plt.figure(figsize=(12, 6))
+sns.violinplot(data=data, x='AQI', y='PM2.5', palette='Set2')
+plt.xlabel('AQI')
+plt.ylabel('PM2.5')
+plt.title('Distribution of AQI for PM2.5')
+plt.tight_layout()
+plt.show()
+
+plt.figure(figsize=(12, 6))
+sns.violinplot(data=data, x='AQI', y='PM10', palette='Set2')
+plt.xlabel('AQI')
+plt.ylabel('PM10')
+plt.title('Distribution of AQI for PM10')
+plt.tight_layout()
+plt.show()
+
+plt.figure(figsize=(12, 6))
+sns.violinplot(data=data, x='AQI', y='CO', palette='Set2')
+plt.xlabel('AQI')
+plt.ylabel('CO')
+plt.title('Distribution of AQI for CO')
+plt.tight_layout()
+plt.show()
+
+# Create a bubble chart for the relationship between AQI, PM2.5, and CO
+plt.figure(figsize=(12, 8))
+plt.scatter(data['PM2.5'], data['CO'], s=data['PM10'] * 10, c=data['AQI'], cmap='coolwarm', alpha=0.7)
+plt.xlabel('PM2.5')
+plt.ylabel('CO')
+plt.title('Bubble Chart: AQI vs. PM2.5 and CO')
+plt.colorbar(label='AQI')  # Add a colorbar for AQI
+plt.grid(True)
+plt.tight_layout()
+plt.show()
