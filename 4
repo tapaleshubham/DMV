@@ -1,0 +1,48 @@
+import numpy as np
+import pandas as pd
+from scipy import stats
+
+# Import dataset
+df = pd.read_csv("/content/RealEstate_price.csv")
+
+# Clean column names by stripping and replacing spaces with underscores
+df.columns = df.columns.str.strip().str.replace(" ", "_")
+
+# Handle missing values: fill 'Price' with mean and 'Bedrooms' with mode
+df['Price'].fillna(df['Price'].mean(), inplace=True)
+df['Bedrooms'].fillna(df['Bedrooms'].mode()[0], inplace=True)
+
+# Check missing values after imputation
+print(df.isnull().sum())
+
+# Filter rows where 'Bedrooms' is less than or equal to 2
+filtered_df = df[df['Bedrooms'] <= 2]
+
+# Select a subset of relevant columns
+subset_df = df[["Price", "SqFt", "Offers"]]
+
+# Label encode 'Brick' column
+df['Brick'] = df['Brick'].map({"No": 0, "Yes": 1})
+
+# Group by 'Neighborhood' and calculate mean price
+grouped_data = df.groupby('Neighborhood')['Price'].mean().reset_index()
+print(grouped_data)
+
+# Handle outliers in the 'Price' column using Z-score
+df['z_score'] = stats.zscore(df['Price'])
+threshold = 3
+outliers_mask = (df['z_score'] > threshold) | (df['z_score'] < -threshold)
+outliers = df[outliers_mask]
+
+# Print the outliers
+print("Outliers in Price column:")
+print(outliers)
+
+# Optionally, you can replace outliers with the median price
+df.loc[outliers_mask, 'Price'] = df['Price'].median()
+
+# Check data types and ensure 'Price' is integer
+df['Price'] = df['Price'].astype(int)
+
+# Display the cleaned dataset info
+print(df.info())
