@@ -1,0 +1,98 @@
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import LabelEncoder
+
+
+df = pd.read_csv('WA_Fn-UseC_-Telco-Customer-Churn.csv')
+df
+
+
+df.info()
+df.shape
+df.describe()
+
+
+print("Missing Values:")
+df.isnull().sum()
+df['MultipleLines'] = df['MultipleLines'].fillna('Not known').str.lower()
+df
+
+df.duplicated()
+
+
+df['InternetService'] = df['InternetService'].replace('Fiber opticalal', 'Fiber Optic')
+df
+
+df['TotalCharges'] = df['TotalCharges'].replace(' ', np.nan)
+df['TotalCharges'] = df['TotalCharges'].astype('float64')
+
+df.info()
+
+
+# Select numerical columns for Z-Score calculation
+numerical_cols = ['tenure', 'MonthlyCharges', 'TotalCharges']
+
+# Calculate Z-Scores for selected columns
+z_scores = np.abs((df[numerical_cols] - df[numerical_cols].mean()) / df[numerical_cols].std())
+
+# Define a threshold for outlier detection (e.g., Z-Score greater than 3)
+threshold = 3
+
+# Identify and print outliers
+outliers = z_scores > threshold
+print("Outliers in each column:")
+print(outliers)
+
+# Count outliers in each column
+outlier_counts = outliers.sum()
+print("\nNumber of outliers in each column:")
+outlier_counts
+
+
+# 1. Creating 'Tenure Categories'
+df['tenure_category'] = pd.cut(df['tenure'], bins=[0, 12, 24, 48, 72, 100], labels=['0-1 Year', '1-2 Years', '2-4 Years', '4-6 Years', '6+ Years'])
+
+# 2. Creating 'Total Services Used'
+df['total_services'] = df[['PhoneService', 'InternetService', 'StreamingTV', 'StreamingMovies']].apply(lambda x: sum(x == 'Yes'), axis=1)
+
+# 3. Monthly Charges to Total Charges Ratio
+df['monthly_to_total_ratio'] = df['MonthlyCharges'] / (df['TotalCharges'].replace(0, 1))  # Replace 0 to avoid division by zero
+
+# 4. Average Monthly Charges
+df['avg_monthly_charges'] = df['TotalCharges'] / df['tenure'].replace(0, 1)  # Replace 0 to avoid division by zero
+
+# 5. Age Group (Example: Assume 'SeniorCitizen' as a binary indicator for age)
+df['age_group'] = df['SeniorCitizen'].apply(lambda x: 'Senior' if x == 1 else 'Non-Senior')
+
+# 6.Contract Renewal
+df['contract_renewal'] = df['Contract'].apply(lambda x: 'Yes' if x in ['One year', 'Two year'] else 'No')
+
+# Preview the updated dataset with new features
+df[['tenure', 'tenure_category', 'total_services', 'monthly_to_total_ratio', 'avg_monthly_charges', 'age_group','contract_renewal']]
+
+
+
+
+numerical_features = ['tenure', 'MonthlyCharges', 'TotalCharges']
+scaler = StandardScaler()
+df[numerical_features] = scaler.fit_transform(df[numerical_features])
+df.head()
+
+
+X = df.drop(columns=['Churn'])
+y = df['Churn']
+
+# Split the dataset into training and testing sets (e.g., 70% training, 30% testing)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Print the shapes of the training and testing sets to verify the split
+print("Training set shape - X:", X_train.shape, "y:", y_train.shape)
+print("Testing set shape - X:", X_test.shape, "y:", y_test.shape)
+
+
+# Export the cleaned dataset to a CSV file
+df.to_csv("Cleaned_Telecom_Customer_Churn.csv", index=False)
+
+print("Cleaned dataset has been successfully exported.")
